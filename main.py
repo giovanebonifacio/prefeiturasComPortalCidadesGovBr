@@ -12,6 +12,7 @@ municipiosStatus200MasNaoIdentificouHtml = []
 municipiosStatus200MasErroDecoding = []
 municipiosLogoGovCidades = []
 municipiosErroTimeout = []
+municipiosComPortal503Manutencao = []
 
 
 # URL_PADRAO = "http://www.maringa.pr.gov.br"
@@ -19,9 +20,21 @@ municipiosErroTimeout = []
 
 def existePortalPrefeituraParaUrl(url):
     try:
-        response = requests.get(url, verify=False, timeout=3, allow_redirects=True)
+        headers = {
+            'User-Agent': 'My User Agent 1.0',
+            'From': 'youremail@domain.example'  # This is another valid field
+        }
+
+        response = requests.get(url,headers=headers, verify=False, timeout=3, allow_redirects=True)
         print(response)
         print(response.status_code)
+
+        if response.status_code == 503 and ('manutenção' or 'manutencao') in response.text.lower() :
+            print("503 em manutenção")
+            municipiosComPortal503Manutencao.append(municipio)
+            return True
+
+
         if response.status_code != 200:
             print("chamada não ok")
             return False
@@ -40,7 +53,10 @@ def existePortalPrefeituraParaUrl(url):
 
 
 def htmlRepresentaPortalPrefeitura(texto):
-    if 'prefeitura' in texto.lower():
+    nomeOriginal = municipio[NOME_MUNICIPIO_COLUMN].lower()
+    nomeTratadoSemEspaco = trataCaracteresEspeciaisGlobal(nomeOriginal)
+    nomeTratadoComTraco = trataCaracteresEspeciaisComTraco(nomeOriginal)
+    if 'prefeitura' or nomeOriginal or nomeTratadoComTraco or nomeTratadoSemEspaco in texto.lower():
         if 'logo-govcidades' in texto.lower():
             municipiosLogoGovCidades.append(municipio)
         return True
@@ -171,3 +187,8 @@ if __name__ == '__main__':
     print("municipiosLogoGovCidades")
     print(municipiosLogoGovCidades)
 
+
+    print(
+        "--------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+    print("municipiosComPortal503Manutencao")
+    print(municipiosComPortal503Manutencao)
